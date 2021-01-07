@@ -18,13 +18,13 @@ const attributes = {
         type: Sequelize.INTEGER,
         allowNull: false,
       }
-}
+};
 
 const options = {
     sequelize,
-    timestamp: false,
+    timestamps: false,
     modelName: 'genreRecommendation'
-}
+};
 
 GenreRecommendation.init(attributes, options);
 

@@ -18,7 +18,7 @@ const attributes = {
 
 const options = {
     sequelize,
-    timestamp: false,
+    timestamps: false,
     modelName: 'genre'
 };
 
