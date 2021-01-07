@@ -1,43 +1,42 @@
 const express = require('express');
 const router = express.Router();
 const Schemas = require('../schemas/appSchemas');
-const Genre = require('../models/Genre');
+const GenresControllers = require('../controllers/GenresControllers');
+const ExistingGenreError = require('../errors/ExistingGenreError');
 
 router.post('/', async (req, res) => {
     try {
         const { body } = req;
-        console.log(body.name);
         const name = !body.name || body.name.toLowerCase();
 
         const { error } = Schemas.postGenre(body);
-        if(error) return res.sendStatus(422);
+        if (error) return res.sendStatus(422);
 
-        const genreConflict = await Genre.findOne({where: { name }});
-        if(genreConflict) return res.sendStatus(409);
+        await GenresControllers.newGenre(name);
 
-        await Genre.create({ name });
+        res.sendStatus(201);
 
-        return res.sendStatus(201);
-
-    } catch(err) {
-        console.error(err);
-        return res.sendStatus(500);
+    } catch(error) {
+        console.error(error);
+        if(error instanceof ExistingGenreError) {
+            res.sendStatus(409);
+        } else {
+            res.sendStatus(500);
+        }
+        
+        
     }
 });
 
 router.get('/', async (req, res) => {
     try {
-        const allGenres = await Genre.findAll({
-            order: [
-                ['name', 'ASC']
-            ]
-        });
+        const allGenres = await GenresControllers.getAll();
         
-        return res.status(200).send(allGenres);
+        res.status(200).send(allGenres);
 
     } catch(err) {
         console.error(err);
-        return res.sendStatus(500);
+        res.sendStatus(500);
     }
 });
 
@@ -46,7 +45,7 @@ router.get('/:id', async (req, res) => {
 
     } catch(err) {
         console.error(err);
-        return res.sendStatus(500);
+        res.sendStatus(500);
     }
 });
 

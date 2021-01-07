@@ -1,5 +1,9 @@
 const express = require('express');
 const Schemas = require('../schemas/appSchemas');
+const RecommendationsControllers = require('../controllers/RecommendationsControllers');
+const ExistingSongError = require('../errors/ExistingSongError');
+const InvalidGenreError = require('../errors/InvalidGenreError');
+
 const router = express.Router();
 
 router.post('/', async (req, res) => {
@@ -7,11 +11,19 @@ router.post('/', async (req, res) => {
         const { error } = Schemas.postRecommendation(req.body);
         if(error) return res.sendStatus(422);
 
-        return res.sendStatus(201);
+        await RecommendationsControllers.newSong(req.body);
 
-    } catch(err) {
-        console.error(err);
-        return res.sendStatus(500);
+        res.sendStatus(201);
+
+    } catch(error) {
+        console.error(error);
+        if(error instanceof ExistingSongError) {
+            res.sendStatus(409);
+        } else if (error instanceof InvalidGenreError) {
+            res.sendStatus(403);
+        } else {
+            res.sendStatus(500);
+        }
     }
 });
 
