@@ -23,13 +23,13 @@ const attributes = {
         allowNull: false,
         unique: true
     }
-}
+};
 
 const options = {
     sequelize,
     timestamps: false,
     modelName: 'recommendation'
-}
+};
 
 Recommendation.init(attributes, options);
 

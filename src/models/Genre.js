@@ -14,13 +14,13 @@ const attributes = {
         type: Sequelize.STRING,
         allowNull: false
     }
-}
+};
 
 const options = {
     sequelize,
     timestamp: false,
     modelName: 'genre'
-}
+};
 
 Genre.init(attributes, options);
 
