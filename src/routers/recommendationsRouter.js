@@ -1,8 +1,13 @@
 const express = require('express');
+const Schemas = require('../schemas/appSchemas');
 const router = express.Router();
 
 router.post('/', async (req, res) => {
     try {
+        const { error } = Schemas.postRecommendation(req.body);
+        if(error) return res.sendStatus(422);
+
+        return res.sendStatus(201);
 
     } catch(err) {
         console.error(err);
@@ -12,6 +17,7 @@ router.post('/', async (req, res) => {
 
 router.post('/:id/upvote', async (req, res) => {
     try {
+        
 
     } catch(err) {
         console.error(err);

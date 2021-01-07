@@ -24,6 +24,7 @@ afterAll(async () => {
 
 describe('POST /genres', () => {
     it('should return status 422 -> no body params', async () => {
+
         const response = await agent.post('/genres');
 
         expect(response.status).toBe(422);
@@ -77,5 +78,42 @@ describe('GET /genres', () => {
         expect(response.status).toBe(200);
         expect(response.body).toEqual(allGenres);
         expect(response.body).not.toEqual(genresNotAlphabetic);
+    });
+});
+
+describe('POST /recommendations', () => {
+    it('should return 422 -> name is required', async () => {
+        const body = {
+            genresIds: [1, 2],
+            youtubeLink: 'https://www.youtube.com/watch?v=5qap5aO4i9A'
+        }
+
+        const response = await agent.post('/recommendations').send(body);
+
+        expect(response.status).toBe(422);
+    });
+
+    it('should return 422 -> error not a youtube link', async () => {
+        const body = {
+            name: 'lofi hip hop radio',
+            genresIds: [1, 2],
+            youtubeLink: 'https://www.google.com/'
+        }
+
+        const response = await agent.post('/recommendations').send(body);
+
+        expect(response.status).toBe(422);
+    });
+
+    it('should return 422 -> error genresId at lest one number', async () => {
+        const body = {
+            name: 'lofi hip hop radio',
+            genresIds: [],
+            youtubeLink: 'https://www.youtube.com/watch?v=5qap5aO4i9A'
+        }
+
+        const response = await agent.post('/recommendations').send(body);
+
+        expect(response.status).toBe(422);
     });
 });
