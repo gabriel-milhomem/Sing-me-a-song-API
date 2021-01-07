@@ -68,22 +68,14 @@ describe('GET /genres', () => {
         ]);
 
         const response = await agent.get('/genres');
-        
-        console.log(response.body);
+
+        const queryResult = await db.query('SELECT * FROM genres ORDER BY name ASC');
+        const failQuery = await db.query('SELECT * FROM genres');
+        const allGenres = queryResult.rows;
+        const genresNotAlphabetic = failQuery.rows;
 
         expect(response.status).toBe(200);
-        expect(response.body).toEqual(
-            expect.arrayContaining([
-                expect.objectContaining({
-                    name: 'arrocha'
-                }),
-                expect.objectContaining({
-                    name: 'eletrônica'
-                }),
-                expect.objectContaining({
-                    name: 'forró'
-                }),
-            ])
-        );
+        expect(response.body).toEqual(allGenres);
+        expect(response.body).not.toEqual(genresNotAlphabetic);
     });
 });

@@ -5,9 +5,11 @@ const Genre = require('../models/Genre');
 
 router.post('/', async (req, res) => {
     try {
-        const name = req.body.name.toLowerCase();
+        const { body } = req;
+        console.log(body.name);
+        const name = !body.name || body.name.toLowerCase();
 
-        const { error } = Schemas.postGenres().validate(req.body);
+        const { error } = Schemas.postGenres().validate(body);
         if(error) return res.sendStatus(422);
 
         const genreConflict = await Genre.findOne({where: { name }});
@@ -32,7 +34,7 @@ router.get('/', async (req, res) => {
         });
 
         return res.status(200).send(allGenres);
-        
+
     } catch(err) {
         console.error(err);
         return res.sendStatus(500);
