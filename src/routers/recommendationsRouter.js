@@ -1,7 +1,7 @@
 const express = require('express');
 const Schemas = require('../schemas/appSchemas');
 const RecommendationsControllers = require('../controllers/RecommendationsControllers');
-const Errors = require('../errors/');
+const Errors = require('../errors');
 
 const router = express.Router();
 
@@ -60,19 +60,32 @@ router.post('/:id/downvote', async (req, res) => {
 
 router.get('/random', async (req, res) => {
     try {
+        const song = await RecommendationsControllers.generateSong();
 
-    } catch(err) {
-        console.error(err);
-        return res.sendStatus(500);
+        res.status(200).send(song);
+
+    } catch(error) {
+        console.error(error);
+        if(error instanceof Errors.ZeroSongsError) {
+            res.sendStatus(404);
+        } else {
+            res.sendStatus(500);
+        }
     }
 });
 
 router.get('/genres/:id/random', async (req, res) => {
     try {
+        const song = await RecommendationsControllers.generateSongByGenre(Number(req.params.id));
 
-    } catch(err) {
-        console.error(err);
-        return res.sendStatus(500);
+        res.status(200).send(song);
+    } catch(error) {
+        console.error(error);
+        if(error instanceof Errors.GenreNotFound || error instanceof Errors.ZeroSongsError) {
+            res.sendStatus(404);
+        } else {
+            res.sendStatus(500);
+        }
     }
 });
 

@@ -22,9 +22,7 @@ router.post('/', async (req, res) => {
             res.sendStatus(409);
         } else {
             res.sendStatus(500);
-        }
-        
-        
+        }   
     }
 });
 

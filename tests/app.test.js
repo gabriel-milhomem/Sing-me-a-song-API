@@ -83,9 +83,29 @@ describe('GET /genres', () => {
         expect(response.body).not.toEqual(genresNotAlphabetic);
 
         listGenresIds = allGenres.map(genre => genre.id);
-        console.log(listGenresIds, 'GENRES ID NO TESTE');
     });
 });
+
+describe('GET /random 404', () => {
+    it('should return status 404 -> dont have any music registered', async () => {
+        const response = await agent.get('/recommendations/random');
+
+        const result = await db.query('SELECT * FROM recommendations');
+
+        expect(response.status).toBe(404);
+        expect(result.rows.length).toEqual(0);
+    });
+
+    it('should return status 404 -> dont have any music registered', async () => {
+        const response = await agent.get(`/recommendations/genres/${listGenresIds[0]}/random`);
+
+        const result = await db.query('SELECT * FROM recommendations');
+
+        expect(response.status).toBe(404);
+        expect(result.rows.length).toEqual(0);
+    });
+});
+
 
 describe('POST /recommendations', () => {
     it('should return status 422 -> error not a name recommendation param', async () => {
@@ -166,8 +186,6 @@ describe('POST /recommendations', () => {
         );
         const song = songResult.rows[0];
 
-        console.log('SONG', song);
-
         listSongsIds.push(song.id);
 
         const relationship = await db.query(
@@ -238,8 +256,6 @@ describe('POST /recommendations/:id/downvote', () => {
 
         listSongsIds.push(insertSongRequest.rows[0].id);
 
-        console.log(listSongsIds, 'SONGSIDS');
-
         const response = await agent.post(`/recommendations/${listSongsIds[1]}/downvote`);
 
         const songResult = await db.query(
@@ -255,19 +271,122 @@ describe('POST /recommendations/:id/downvote', () => {
     });
 
     it('should return 200 -> more then -5 votes and the recommendation is deleted', async () => {
+        const songId = listSongsIds[1]; 
         const song = await db.query(
             'UPDATE recommendations SET score = $1 WHERE id = $2 RETURNING *', [
-                -5 , listSongsIds[1]
+                -5 , songId
             ]
         );
 
-        const response = await agent.post(`/recommendations/${listSongsIds[1]}/downvote`);
+        await db.query(
+            'INSERT INTO "genresRecommendations" ("genreId", "recommendationId") VALUES ($1, $2), ($3, $4)', [
+                listGenresIds[0], songId, listGenresIds[1], songId
+            ]
+        );
 
-        const songsRequest = await db.query('SELECT * FROM recommendations');
+        const response = await agent.post(`/recommendations/${songId}/downvote`);
+
+        const songs = await db.query('SELECT * FROM recommendations');
+        const relationships = await db.query('SELECT * FROM "genresRecommendations"');
 
         expect(response.status).toBe(200);
-        expect(songsRequest.rows).not.toEqual(
-            expect.objectContaining(song.rows[0])
+        expect(songs.rows).not.toEqual(
+            expect.arrayContaining([
+                expect.objectContaining(song.rows[0])
+            ])
+        );
+        expect(relationships.rows).not.toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    genreId: listGenresIds[0],
+                    recommendationId: songId
+                }),
+                expect.objectContaining({
+                    genreId: listGenresIds[1],
+                    recommendationId: songId
+                })
+            ])
+        );
+    });
+});
+
+describe('GET /recommendations/random', () => {
+    it('should return status 200 -> response random recommendation with correct format', async () => {
+        const response = await agent.get(`/recommendations/random`);
+
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual(
+            expect.objectContaining({
+                id: expect.any(Number),
+                name: expect.any(String),
+                genres: expect.arrayContaining([
+                    expect.objectContaining({
+                        id: expect.any(Number),
+                        name: expect.any(String)
+                    })
+                ]),
+                youtubeLink: expect.any(String),
+                score: expect.any(Number)
+            })
+        );
+    });
+});
+
+describe('GET /recommendations/genres/:id/random', () => {
+    it('should return 404 -> error invalid genre id', async () => {
+        const response = await agent.get('/recommendations/genres/9999/random');
+
+        expect(response.status).toBe(404);
+    });
+
+    it('should return status 200 -> response random recommendation by a genre', async () => {
+        const response = await agent.get(`/recommendations/genres/${listGenresIds[0]}/random`);
+
+        const genreResult = await db.query(
+            'SELECT * FROM genres WHERE id = $1', [listGenresIds[0]]
+        );
+        const genre = genreResult.rows[0];
+        
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual(
+            expect.objectContaining({
+                id: expect.any(Number),
+                name: expect.any(String),
+                genres: expect.arrayContaining([
+                    expect.objectContaining({
+                        id: genre.id,
+                        name: genre.name
+                    })
+                ]),
+                youtubeLink: expect.any(String),
+                score: expect.any(Number)
+            })
+        );
+    });
+
+    it('should return status 200 -> the genre dont have songs so get a random song', async () => {
+        const genreResult = await db.query(
+            'INSERT INTO genres (name) VALUES ($1) RETURNING *', ['opera']
+        );
+
+        const genre = genreResult.rows[0];
+        
+        const response = await agent.get(`/recommendations/genres/${genre.id}/random`);
+
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual(
+            expect.objectContaining({
+                id: expect.any(Number),
+                name: expect.any(String),
+                genres: expect.arrayContaining([
+                    expect.not.objectContaining({
+                        id: genre.id,
+                        name: genre.name
+                    })
+                ]),
+                youtubeLink: expect.any(String),
+                score: expect.any(Number)
+            })
         );
     });
 });
