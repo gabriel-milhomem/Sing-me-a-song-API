@@ -1,8 +1,7 @@
 const express = require('express');
 const Schemas = require('../schemas/appSchemas');
 const RecommendationsControllers = require('../controllers/RecommendationsControllers');
-const ExistingSongError = require('../errors/ExistingSongError');
-const InvalidGenreError = require('../errors/InvalidGenreError');
+const Errors = require('../errors/');
 
 const router = express.Router();
 
@@ -17,9 +16,9 @@ router.post('/', async (req, res) => {
 
     } catch(error) {
         console.error(error);
-        if(error instanceof ExistingSongError) {
+        if(error instanceof Errors.ExistingSongError) {
             res.sendStatus(409);
-        } else if (error instanceof InvalidGenreError) {
+        } else if (error instanceof Errors.InvalidGenreError) {
             res.sendStatus(403);
         } else {
             res.sendStatus(500);
@@ -29,11 +28,17 @@ router.post('/', async (req, res) => {
 
 router.post('/:id/upvote', async (req, res) => {
     try {
-        
+        await RecommendationsControllers.upVote(Number(req.params.id));
 
-    } catch(err) {
-        console.error(err);
-        return res.sendStatus(500);
+        res.sendStatus(200);
+
+    } catch(error) {
+        console.error(error);
+        if(error instanceof Errors.SongNotFound) {
+            res.sendStatus(404);
+        } else {
+            res.sendStatus(500);
+        }
     }
 });
 

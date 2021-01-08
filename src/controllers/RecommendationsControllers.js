@@ -21,12 +21,25 @@ class RecommendationsControllers {
         );
     }
 
+    async upVote(id) {
+        const song = await this.getSongById(id);
+        if(!song) throw new Errors.SongNotFound();
+
+        song.score += 1;
+
+        await song.save();
+    }
+
     getSongByLink(youtubeLink) {
         return Recommendation.findOne({where: { youtubeLink }});
     }
 
     getGenreById(id) {
         return Genre.findByPk(id);
+    }
+
+    getSongById(id) {
+        return Recommendation.findByPk(id);
     }
 
     createSong(songData) {

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Schemas = require('../schemas/appSchemas');
 const GenresControllers = require('../controllers/GenresControllers');
-const ExistingGenreError = require('../errors/ExistingGenreError');
+const Errors = require('../errors');
 
 router.post('/', async (req, res) => {
     try {
@@ -18,7 +18,7 @@ router.post('/', async (req, res) => {
 
     } catch(error) {
         console.error(error);
-        if(error instanceof ExistingGenreError) {
+        if(error instanceof Errors.ExistingGenreError) {
             res.sendStatus(409);
         } else {
             res.sendStatus(500);

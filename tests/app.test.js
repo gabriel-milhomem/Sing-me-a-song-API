@@ -23,6 +23,7 @@ afterAll(async () => {
 })
 
 let listGenresIds;
+let oneSongId;
 
 describe('POST /genres', () => {
     it('should return status 422 -> error not a name genre param', async () => {
@@ -163,9 +164,10 @@ describe('POST /recommendations', () => {
             'SELECT * FROM recommendations WHERE "youtubeLink" = $1', [youtubeLink]
         );
         const song = songResult.rows[0];
+        oneSongId = song.id;
 
         const relationship = await db.query(
-            'SELECT * FROM "genresRecommendations" WHERE "recommendationId" = $1', [song.id]
+            'SELECT * FROM "genresRecommendations" WHERE "recommendationId" = $1', [oneSongId]
         );
 
         expect(response.status).toBe(201);
@@ -188,4 +190,25 @@ describe('POST /recommendations', () => {
             ])
         );
     });
+});
+
+describe('POST /recommendations/:id/upvote', () => {
+    it('should return 404 -> invalid recommendation id', async () => {
+        const response = await agent.post('/recommendations/23434/upvote');
+
+        expect(response.status).toBe(404);
+    });
+
+    it('should return 200 -> add one in the score', async () => {
+        const response = await agent.post(`/recommendations/${oneSongId}/upvote`);
+
+        const songResult = await db.query(
+            'SELECT * FROM recommendations WHERE id = $1', [oneSongId]
+        );
+
+        const score = songResult.rows[0].score;
+
+        expect(response.status).toBe(200);
+        expect(score).toEqual(1);
+    })
 });
