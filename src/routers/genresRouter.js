@@ -38,13 +38,4 @@ router.get('/', async (req, res) => {
     }
 });
 
-router.get('/:id', async (req, res) => {
-    try {
-
-    } catch(err) {
-        console.error(err);
-        res.sendStatus(500);
-    }
-});
-
 module.exports = router;

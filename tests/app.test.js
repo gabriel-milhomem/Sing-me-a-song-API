@@ -157,6 +157,8 @@ describe('POST /recommendations', () => {
         const response = await agent.post('/recommendations').send(body);
 
         expect(response.status).toBe(409);
+
+        await db.query('DELETE FROM recommendations WHERE name = $1', ['lo-fi hip hop radio']);
     });
 
     it('should return status 403 -> error at least one genre is invalid', async () => {
