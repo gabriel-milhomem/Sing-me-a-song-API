@@ -30,6 +30,19 @@ class RecommendationsControllers {
         await song.save();
     }
 
+    async downVote(id) {
+        const song = await this.getSongById(id);
+        if(!song) throw new Errors.SongNotFound();
+
+        if(song.score - 1 < -5) {
+            await song.destroy();
+        } else {
+            song.score -= 1;
+
+            await song.save();
+        }
+    }
+
     getSongByLink(youtubeLink) {
         return Recommendation.findOne({where: { youtubeLink }});
     }

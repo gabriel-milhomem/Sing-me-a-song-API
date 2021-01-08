@@ -44,10 +44,17 @@ router.post('/:id/upvote', async (req, res) => {
 
 router.post('/:id/downvote', async (req, res) => {
     try {
+        await RecommendationsControllers.downVote(Number(req.params.id));
 
-    } catch(err) {
-        console.error(err);
-        return res.sendStatus(500);
+        res.sendStatus(200);
+
+    } catch(error) {
+        console.error(error);
+        if(error instanceof Errors.SongNotFound) {
+            res.sendStatus(404);
+        } else {
+            res.sendStatus(500);
+        }
     }
 });
 

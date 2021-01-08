@@ -22,8 +22,8 @@ afterAll(async () => {
     await sequelize.close();
 })
 
-let listGenresIds;
-let oneSongId;
+let listGenresIds = [];
+let listSongsIds = [];
 
 describe('POST /genres', () => {
     it('should return status 422 -> error not a name genre param', async () => {
@@ -152,7 +152,7 @@ describe('POST /recommendations', () => {
     });
 
     it('should return status 201 -> create a recommendation song with all genreIds valid', async () => {
-        const youtubeLink = 'https://www.youtube.com/watch?v=chwyjJbcs1Y';
+        const youtubeLink = 'www.youtube.com/watch?v=chwyjJbcs1Y';
         const body = {
             name: 'Falamansa - Xote dos Milagres',
             genresIds: [listGenresIds[0], listGenresIds[1]],
@@ -160,14 +160,20 @@ describe('POST /recommendations', () => {
         }
 
         const response = await agent.post('/recommendations').send(body);
+
         const songResult = await db.query(
             'SELECT * FROM recommendations WHERE "youtubeLink" = $1', [youtubeLink]
         );
         const song = songResult.rows[0];
-        oneSongId = song.id;
+
+        console.log('SONG', song);
+
+        listSongsIds.push(song.id);
 
         const relationship = await db.query(
-            'SELECT * FROM "genresRecommendations" WHERE "recommendationId" = $1', [oneSongId]
+            'SELECT * FROM "genresRecommendations" WHERE "recommendationId" = $1', [
+                listSongsIds[0]
+            ]
         );
 
         expect(response.status).toBe(201);
@@ -177,6 +183,7 @@ describe('POST /recommendations', () => {
                 youtubeLink
             })
         );
+
         expect(relationship.rows).toEqual(
             expect.arrayContaining([
                 expect.objectContaining({
@@ -193,17 +200,19 @@ describe('POST /recommendations', () => {
 });
 
 describe('POST /recommendations/:id/upvote', () => {
-    it('should return 404 -> invalid recommendation id', async () => {
+    it('should return 404 -> error invalid recommendation id', async () => {
         const response = await agent.post('/recommendations/23434/upvote');
 
         expect(response.status).toBe(404);
     });
 
     it('should return 200 -> add one in the score', async () => {
-        const response = await agent.post(`/recommendations/${oneSongId}/upvote`);
+        const response = await agent.post(`/recommendations/${listSongsIds[0]}/upvote`);
 
         const songResult = await db.query(
-            'SELECT * FROM recommendations WHERE id = $1', [oneSongId]
+            'SELECT * FROM recommendations WHERE id = $1', [
+                listSongsIds[0]
+            ]
         );
 
         const score = songResult.rows[0].score;
@@ -211,4 +220,54 @@ describe('POST /recommendations/:id/upvote', () => {
         expect(response.status).toBe(200);
         expect(score).toEqual(1);
     })
+});
+
+describe('POST /recommendations/:id/downvote', () => {
+    it('should return 404 -> error invalid recommendation id', async () => {
+        const response = await agent.post('recommendations/34234/downvote');
+
+        expect(response.status).toBe(404);
+    });
+
+    it('should return 200 -> subtract one in the score', async () => {
+        const insertSongRequest = await db.query(
+            'INSERT INTO recommendations (name, "youtubeLink", score) VALUES ($1, $2, $3) RETURNING *', [
+                'Linkin Park - Numb', 'youtube.com/watch?v=kXYiU_JCYtU', 5
+            ]
+        );
+
+        listSongsIds.push(insertSongRequest.rows[0].id);
+
+        console.log(listSongsIds, 'SONGSIDS');
+
+        const response = await agent.post(`/recommendations/${listSongsIds[1]}/downvote`);
+
+        const songResult = await db.query(
+            'SELECT * FROM recommendations WHERE id = $1', [
+                listSongsIds[1]
+            ]
+        );
+
+        const score = songResult.rows[0].score;
+
+        expect(response.status).toBe(200);
+        expect(score).toEqual(4);
+    });
+
+    it('should return 200 -> more then -5 votes and the recommendation is deleted', async () => {
+        const song = await db.query(
+            'UPDATE recommendations SET score = $1 WHERE id = $2 RETURNING *', [
+                -5 , listSongsIds[1]
+            ]
+        );
+
+        const response = await agent.post(`/recommendations/${listSongsIds[1]}/downvote`);
+
+        const songsRequest = await db.query('SELECT * FROM recommendations');
+
+        expect(response.status).toBe(200);
+        expect(songsRequest.rows).not.toEqual(
+            expect.objectContaining(song.rows[0])
+        );
+    });
 });
