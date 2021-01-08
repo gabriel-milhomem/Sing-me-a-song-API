@@ -1,7 +1,9 @@
 const { Sequelize } = require('sequelize');
 const sequelize = require('../utils/database');
 
-class GenreRecommendation extends Sequelize.Model { }
+class GenresRecommendation extends Sequelize.Model {
+
+}
 
 const attributes = {
     id: {
@@ -23,9 +25,9 @@ const attributes = {
 const options = {
     sequelize,
     timestamps: false,
-    modelName: 'genreRecommendation'
+    modelName: 'genresRecommendation'
 };
 
-GenreRecommendation.init(attributes, options);
+GenresRecommendation.init(attributes, options);
 
-module.exports = GenreRecommendation;
+module.exports = GenresRecommendation;

@@ -1,7 +1,9 @@
 const { Sequelize } = require('sequelize');
 const sequelize = require('../utils/database');
 
-class Genre extends Sequelize.Model { }
+class Genre extends Sequelize.Model { 
+    
+}
 
 const attributes = {
     id: {
@@ -12,7 +14,7 @@ const attributes = {
     },
     name: {
         type: Sequelize.STRING,
-        allowNull: false
+        allowNull: false,
     }
 };
 

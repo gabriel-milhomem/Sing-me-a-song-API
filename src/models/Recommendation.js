@@ -1,7 +1,9 @@
 const { Sequelize } = require('sequelize');
 const sequelize = require('../utils/database');
 
-class Recommendation extends Sequelize.Model { }
+class Recommendation extends Sequelize.Model { 
+    
+}
 
 const attributes = {
     id: {

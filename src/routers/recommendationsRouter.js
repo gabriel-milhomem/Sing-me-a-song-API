@@ -11,7 +11,7 @@ router.post('/', async (req, res) => {
         const { error } = Schemas.postRecommendation(req.body);
         if(error) return res.sendStatus(422);
 
-        await RecommendationsControllers.newSong(req.body);
+        await RecommendationsControllers.newRecommendation(req.body);
 
         res.sendStatus(201);
 

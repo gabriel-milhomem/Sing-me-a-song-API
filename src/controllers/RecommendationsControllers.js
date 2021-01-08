@@ -1,9 +1,26 @@
 const Recommendation = require('../models/Recommendation');
-const ExistingSongError = require('../errors/ExistingSongError');
+const GenresRecommendation = require('../models/GenresRecommendation');
 const Genre = require('../models/Genre');
-const InvalidGenreError = require('../errors/InvalidGenreError');
+const Errors = require('../errors');
 
 class RecommendationsControllers {
+    async newRecommendation(songData) {
+        const { youtubeLink, genresIds } = songData;
+        
+        const songConflict = await this.getSongByLink(youtubeLink);
+        if (songConflict) throw new Errors.ExistingSongError();
+
+        const isInvalidGenres = await Promise.all(
+            genresIds.map(id => this.getGenreById(id))
+        );
+        if(isInvalidGenres.some(genre => !genre)) throw new Errors.InvalidGenreError();
+
+        const song = await this.createSong(songData);
+        await Promise.all(
+            genresIds.map(id => this.newRelationship(song.id, id))    
+        );
+    }
+
     getSongByLink(youtubeLink) {
         return Recommendation.findOne({where: { youtubeLink }});
     }
@@ -11,20 +28,13 @@ class RecommendationsControllers {
     getGenreById(id) {
         return Genre.findByPk(id);
     }
-    
-    async newSong(songData) {
-        const { youtubeLink, genresIds, name } = songData;
-        const songConflict = await this.getSongByLink(youtubeLink);
 
-        if (songConflict) throw new ExistingSongError();
+    createSong(songData) {
+        return Recommendation.create(songData);
+    }
 
-        const isInvalidGenres = await Promise.all(
-            genresIds.map(genre => this.getGenreById(genre.id))
-        );
-
-        if(isInvalidGenres.some(genre => !genre)) throw new InvalidGenreError();
-
-        
+    newRelationship(recommendationId, genreId) {
+        return GenresRecommendation.create({recommendationId, genreId});
     }
 }
 

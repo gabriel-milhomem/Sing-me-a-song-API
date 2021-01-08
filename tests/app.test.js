@@ -82,6 +82,7 @@ describe('GET /genres', () => {
         expect(response.body).not.toEqual(genresNotAlphabetic);
 
         listGenresIds = allGenres.map(genre => genre.id);
+        console.log(listGenresIds, 'GENRES ID NO TESTE');
     });
 });
 
@@ -147,5 +148,44 @@ describe('POST /recommendations', () => {
         const response = await agent.post('/recommendations').send(body);
 
         expect(response.status).toBe(403);
+    });
+
+    it('should return status 201 -> create a recommendation song with all genreIds valid', async () => {
+        const youtubeLink = 'https://www.youtube.com/watch?v=chwyjJbcs1Y';
+        const body = {
+            name: 'Falamansa - Xote dos Milagres',
+            genresIds: [listGenresIds[0], listGenresIds[1]],
+            youtubeLink
+        }
+
+        const response = await agent.post('/recommendations').send(body);
+        const songResult = await db.query(
+            'SELECT * FROM recommendations WHERE "youtubeLink" = $1', [youtubeLink]
+        );
+        const song = songResult.rows[0];
+
+        const relationship = await db.query(
+            'SELECT * FROM "genresRecommendations" WHERE "recommendationId" = $1', [song.id]
+        );
+
+        expect(response.status).toBe(201);
+        expect(song).toEqual(
+            expect.objectContaining({
+                name: body.name,
+                youtubeLink
+            })
+        );
+        expect(relationship.rows).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    genreId: listGenresIds[0],
+                    recommendationId: song.id
+                }),
+                expect.objectContaining({
+                    genreId: listGenresIds[1],
+                    recommendationId: song.id
+                })
+            ])
+        );
     });
 });

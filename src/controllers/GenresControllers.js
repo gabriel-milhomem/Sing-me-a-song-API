@@ -1,16 +1,20 @@
 const Genre = require('../models/Genre');
-const ExistingGenreError = require('../errors/ExistingGenreError');
+const Errors = require('../errors');
 
 class GenresControllers {
     async newGenre(name) {
         const genreConflict = await this.getOne(name);
-        if(genreConflict) throw new ExistingGenreError();
+        if(genreConflict) throw new Errors.ExistingGenreError();
 
-        await Genre.create({ name });
+        await this.createGenre(name);
     }
 
     getOne(name) {
         return Genre.findOne({where: { name }});
+    }
+
+    createGenre(name) {
+        return Genre.create({ name });
     }
 
     getAll() {
