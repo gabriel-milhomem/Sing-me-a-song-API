@@ -89,13 +89,4 @@ router.get('/genres/:id/random', async (req, res) => {
     }
 });
 
-router.get('/genres/top/:amount', async (req, res) => {
-    try {
-
-    } catch(err) {
-        console.error(err);
-        return res.sendStatus(500);
-    }
-});
-
 module.exports = router;

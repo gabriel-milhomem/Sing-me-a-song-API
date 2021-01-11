@@ -1,4 +1,4 @@
-class SongNotFound {
+class SongNotFound extends Error {
 
 }
 
